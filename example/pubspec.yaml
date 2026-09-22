@@ -1,0 +1,21 @@
+name: mail_message_viewer_example
+description: Example app for the mail_message_viewer package.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  mail_message_viewer:
+    path: ../
+  file_picker: ^8.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true

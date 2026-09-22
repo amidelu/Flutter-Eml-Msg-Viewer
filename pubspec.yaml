@@ -1,0 +1,29 @@
+name: mail_message_viewer
+description: >
+  A Flutter widget and parser for previewing .eml (RFC822/MIME) and .msg
+  (Outlook CFBF/MAPI) email files in-app, with no native platform code.
+version: 0.1.0
+homepage: https://github.com/example/mail_message_viewer
+repository: https://github.com/example/mail_message_viewer
+
+environment:
+  sdk: ^3.9.0
+  flutter: ">=3.24.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  enough_mail: ^2.1.7
+  flutter_widget_from_html: ^0.17.2
+  http: ^1.2.0
+  path_provider: ^2.1.0
+  open_filex: ^4.5.0
+  intl: ^0.19.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
