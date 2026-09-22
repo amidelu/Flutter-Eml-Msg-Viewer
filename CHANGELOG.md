@@ -1,4 +1,4 @@
-## 0.1.0
+## 1.0.0
 
 - Initial release: `.eml` parsing via `enough_mail`, and a from-scratch
   pure-Dart `.msg` (CFBF/MAPI) parser. `MailMessageViewer` widget renders
