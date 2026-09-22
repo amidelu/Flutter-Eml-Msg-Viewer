@@ -65,7 +65,7 @@ class AttachmentTile extends StatelessWidget {
                   Text(size, style: tt.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
                 ],
                 const SizedBox(width: 8),
-                Icon(Icons.download_outlined, size: 18, color: cs.onSurfaceVariant),
+                Icon(Icons.open_in_new, size: 18, color: cs.onSurfaceVariant),
               ],
             ),
           ),
