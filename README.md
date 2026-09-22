@@ -7,7 +7,7 @@ attachment list. Pure Dart: no platform channels, no native code.
 
 ## Why
 
-Handing an `.eml` or `.msg` file off to whatever mail app is installed
+Handling an `.eml` or `.msg` file off to whatever mail app is installed
 doesn't work as a "viewer" — Outlook, Mail, and friends treat an incoming
 message file as something to attach to a new draft, not something to
 display. This package parses and renders the message itself instead.
