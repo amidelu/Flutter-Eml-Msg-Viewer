@@ -1,7 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mail_message_viewer/mail_message_viewer.dart';
+import 'package:flutter_eml_msg_viewer/flutter_eml_msg_viewer.dart';
 
 const _sampleEml = '''
 From: Alice Sender <alice@example.com>

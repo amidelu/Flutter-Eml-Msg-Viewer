@@ -10,8 +10,10 @@ class MapiProperty {
 
   static const int senderName = 0x0C1A;
   static const int senderEmailAddress = 0x0C1F;
+  static const int senderSmtpAddress = 0x5D01;
   static const int sentRepresentingName = 0x0042;
   static const int sentRepresentingEmailAddress = 0x0065;
+  static const int sentRepresentingSmtpAddress = 0x5D02;
 
   static const int displayTo = 0x0E04;
   static const int displayCc = 0x0E03;

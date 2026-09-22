@@ -38,7 +38,13 @@ class MsgParser {
 
     final senderName = props.getString(MapiProperty.senderName) ??
         props.getString(MapiProperty.sentRepresentingName);
-    final senderEmail = props.getString(MapiProperty.senderEmailAddress) ??
+    // Prefer the SMTP-form address: PidTagSenderEmailAddress is frequently
+    // an X.500 directory name (e.g. "/O=EXCHANGELABS/OU=.../CN=...") rather
+    // than something a person can read or reply to, especially for
+    // Exchange-generated system messages.
+    final senderEmail = props.getString(MapiProperty.senderSmtpAddress) ??
+        props.getString(MapiProperty.senderEmailAddress) ??
+        props.getString(MapiProperty.sentRepresentingSmtpAddress) ??
         props.getString(MapiProperty.sentRepresentingEmailAddress);
 
     final decodedAttachments = _readAttachments(cf, root);

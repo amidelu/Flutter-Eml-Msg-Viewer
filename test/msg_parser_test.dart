@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mail_message_viewer/src/parser/msg/cfb/cfb_reader.dart';
-import 'package:mail_message_viewer/src/parser/msg/msg_parser.dart';
+import 'package:flutter_eml_msg_viewer/src/parser/msg/cfb/cfb_reader.dart';
+import 'package:flutter_eml_msg_viewer/src/parser/msg/msg_parser.dart';
 
 import 'support/msg_fixture_builder.dart';
 
@@ -90,6 +90,37 @@ void main() {
       // data: URI using the attachment's bytes.
       expect(message.htmlBody, contains('data:image/png;base64,'));
       expect(message.htmlBody, isNot(contains('cid:img1')));
+    });
+
+    test('prefers the SMTP-form sender address over an X.500 directory name', () {
+      // Exchange-generated messages commonly set PidTagSenderEmailAddress to
+      // an X.500 DN and only carry the readable address in
+      // PidTagSenderSmtpAddress — this is not a synthetic edge case, it's
+      // what a real Exchange "system alert" .msg looks like.
+      const x500Dn = '/O=EXCHANGELABS/OU=EXCHANGE ADMINISTRATIVE GROUP '
+          '(FYDIBOHF23SPDLT)/CN=RECIPIENTS/CN=1B2E8039E5DF46AA83B41A0019304CE5-ALERTS';
+
+      final props = propertiesStream(32, [
+        PropRow.unicode(0x0037, 'System alert'),
+        PropRow.unicode(0x0C1A, 'Alerts'),
+        PropRow.string8(0x0C1F, x500Dn),
+        PropRow.unicode(0x5D01, 'alerts@example.com'),
+        PropRow.unicode(0x1000, 'Body'),
+      ]);
+
+      final root = CfbNode.root([
+        CfbNode.stream('__properties_version1.0', props),
+        CfbNode.stream(substgName(0x0037, 0x001F), utf16le('System alert')),
+        CfbNode.stream(substgName(0x0C1A, 0x001F), utf16le('Alerts')),
+        CfbNode.stream(substgName(0x0C1F, 0x001E), Uint8List.fromList(utf8.encode(x500Dn))),
+        CfbNode.stream(substgName(0x5D01, 0x001F), utf16le('alerts@example.com')),
+        CfbNode.stream(substgName(0x1000, 0x001F), utf16le('Body')),
+      ]);
+
+      final message = MsgParser.parse(CfbNode.build(root));
+
+      expect(message.from?.name, 'Alerts');
+      expect(message.from?.email, 'alerts@example.com');
     });
 
     test('rejects bytes without the CFB signature', () {

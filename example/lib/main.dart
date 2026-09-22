@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:mail_message_viewer/mail_message_viewer.dart';
+import 'package:flutter_eml_msg_viewer/flutter_eml_msg_viewer.dart';
 
 void main() => runApp(const ExampleApp());
 
@@ -12,7 +12,7 @@ class ExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'mail_message_viewer example',
+      title: 'flutter_eml_msg_viewer example',
       theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
       home: const PickerPage(),
     );
@@ -48,7 +48,7 @@ class _PickerPageState extends State<PickerPage> {
   Widget build(BuildContext context) {
     final bytes = _bytes;
     return Scaffold(
-      appBar: AppBar(title: Text(_fileName ?? 'mail_message_viewer example')),
+      appBar: AppBar(title: Text(_fileName ?? 'flutter_eml_msg_viewer example')),
       floatingActionButton: FloatingActionButton(
         onPressed: _pickFile,
         child: const Icon(Icons.folder_open),

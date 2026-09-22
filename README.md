@@ -1,4 +1,4 @@
-# mail_message_viewer
+# flutter_eml_msg_viewer
 
 Preview `.eml` (RFC822/MIME) and `.msg` (Outlook's proprietary CFBF/MAPI
 binary format) email files inside a Flutter app — headers, HTML or
@@ -19,7 +19,7 @@ stores on top of it ([MS-OXMSG]) — there is no bundled native library.
 ## Usage
 
 ```dart
-import 'package:mail_message_viewer/mail_message_viewer.dart';
+import 'package:flutter_eml_msg_viewer/flutter_eml_msg_viewer.dart';
 
 // From bytes you already have (e.g. picked from disk, or downloaded):
 MailMessageViewer(bytes: fileBytes);
