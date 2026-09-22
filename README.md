@@ -61,6 +61,22 @@ MailMessageViewer(
 )
 ```
 
+### Link taps
+
+Tapping a link in the HTML body does nothing by default — this package
+intentionally has no `url_launcher` dependency. Wire up `onLinkTap` to open
+links with whatever your app already uses:
+
+```dart
+MailMessageViewer(
+  bytes: fileBytes,
+  onLinkTap: (url) async {
+    // e.g. await launchUrl(Uri.parse(url));
+    return true; // mark the tap as handled
+  },
+)
+```
+
 ## Known limitations
 
 - `.msg` attachments stored as an embedded message (`AttachMethod` =

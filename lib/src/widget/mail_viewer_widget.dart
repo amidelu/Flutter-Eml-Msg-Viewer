@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_widget_from_html/flutter_widget_from_html.dart';
+import 'package:flutter_widget_from_html_core/flutter_widget_from_html_core.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:open_filex/open_filex.dart';
@@ -20,6 +21,12 @@ import 'header_row.dart';
 /// registered handler via `open_filex`.
 typedef MailAttachmentTap = void Function(BuildContext context, MailAttachment attachment);
 
+/// Called when a link inside the HTML body is tapped. The widget itself
+/// never launches URLs (that would require a `url_launcher` dependency);
+/// wire this up to actually open [url] if you want that behavior. Return
+/// `true` to mark the tap as handled.
+typedef MailLinkTap = FutureOr<bool> Function(String url);
+
 /// An in-app preview for `.eml` (RFC822/MIME) and `.msg` (Outlook CFBF/MAPI)
 /// email files: subject/from/to/cc/date headers, the HTML or plain-text
 /// body (with `cid:` inline images resolved), and a tappable attachment
@@ -32,6 +39,7 @@ class MailMessageViewer extends StatefulWidget {
     super.key,
     required Uint8List bytes,
     this.onAttachmentTap,
+    this.onLinkTap,
   })  : _bytes = bytes,
         _url = null,
         _headers = null;
@@ -43,6 +51,7 @@ class MailMessageViewer extends StatefulWidget {
     required String url,
     Map<String, String>? headers,
     this.onAttachmentTap,
+    this.onLinkTap,
   })  : _bytes = null,
         _url = url,
         _headers = headers;
@@ -54,6 +63,10 @@ class MailMessageViewer extends StatefulWidget {
   /// Overrides the default open-attachment behavior. Called with the tapped
   /// [MailAttachment]; use [MailAttachment.loadBytes] to get its data.
   final MailAttachmentTap? onAttachmentTap;
+
+  /// Called when a link in the HTML body is tapped. Unset by default, so
+  /// tapping a link does nothing unless you provide this.
+  final MailLinkTap? onLinkTap;
 
   @override
   State<MailMessageViewer> createState() => _MailMessageViewerState();
@@ -219,6 +232,7 @@ class _MailMessageViewerState extends State<MailMessageViewer> {
               htmlBody,
               renderMode: RenderMode.column,
               textStyle: tt.bodyMedium?.copyWith(color: cs.onSurface),
+              onTapUrl: widget.onLinkTap == null ? null : (url) async => await widget.onLinkTap!(url),
             )
           else
             Text(
