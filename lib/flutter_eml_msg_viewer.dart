@@ -5,4 +5,5 @@ export 'src/model/mail_address.dart';
 export 'src/model/mail_attachment.dart';
 export 'src/model/mail_message.dart';
 export 'src/parser/mail_message_parser.dart';
+export 'src/widget/mail_html_view.dart';
 export 'src/widget/mail_viewer_widget.dart';

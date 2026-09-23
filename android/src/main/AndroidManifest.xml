@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <provider
+            android:name="com.amidelu.flutter_eml_msg_viewer.FlutterEmlMsgViewerFileProvider"
+            android:authorities="${applicationId}.flutter_eml_msg_viewer.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/flutter_eml_msg_viewer_file_paths" />
+        </provider>
+    </application>
+</manifest>

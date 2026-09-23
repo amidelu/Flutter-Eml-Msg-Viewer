@@ -1,0 +1,30 @@
+group 'com.amidelu.flutter_eml_msg_viewer'
+version '1.0-SNAPSHOT'
+
+// AGP and Kotlin are supplied by the host app's Gradle setup; Kotlin
+// compilation uses AGP's built-in Kotlin support instead of applying KGP.
+apply plugin: 'com.android.library'
+
+android {
+    namespace "com.amidelu.flutter_eml_msg_viewer"
+    compileSdk 36
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        minSdk 21
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core-ktx:1.13.1"
+}

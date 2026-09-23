@@ -1,107 +1,125 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:enough_mail/enough_mail.dart' as mime;
-
-import '../../model/mail_address.dart';
 import '../../model/mail_attachment.dart';
 import '../../model/mail_message.dart';
+import 'mime_parser.dart';
 
 /// Parses RFC822/MIME `.eml` source text into a [MailMessage].
 class EmlParser {
   const EmlParser._();
 
   static MailMessage parse(String source) {
-    final message = mime.MimeMessage.parseFromText(source);
-    final attachmentInfos = _collectAttachmentInfos(message);
-    final rawHtml = message.decodeTextHtmlPart();
+    final bytes = Uint8List.fromList(utf8.encode(source));
+    return parseBytes(bytes);
+  }
+
+  static MailMessage parseBytes(Uint8List bytes) {
+    final rootPart = MimePart.parse(bytes);
+
+    final fromList = parseAddressList(rootPart.headers['from']);
+    final toList = parseAddressList(rootPart.headers['to']);
+    final ccList = parseAddressList(rootPart.headers['cc']);
+    final bccList = parseAddressList(rootPart.headers['bcc']);
+    final subject = rootPart.headers['subject'] != null
+        ? decodeMimeEncodedWords(rootPart.headers['subject']!)
+        : null;
+    final date = parseRfc2822Date(rootPart.headers['date']);
+
+    final allParts = <MimePart>[];
+    _collectLeafParts(rootPart, allParts);
+
+    // Identify HTML and plain-text body parts
+    String? rawHtml;
+    String? textBody;
+
+    for (final part in allParts) {
+      if (part.isAttachment) continue;
+      if (part.mediaType == 'text/html' && rawHtml == null) {
+        rawHtml = part.decodeText();
+      } else if (part.mediaType == 'text/plain' && textBody == null) {
+        textBody = part.decodeText();
+      }
+    }
+
+    // Collect attachments and inline media parts
+    final attachmentParts = _collectAttachments(allParts);
+
+    // Resolve cid: images in the HTML body
     final htmlBody = rawHtml == null
         ? null
-        : _resolveCidImages(message, rawHtml, attachmentInfos);
+        : _resolveCidImages(rawHtml, attachmentParts);
 
-    final fromList = message.from;
+    final attachments = [
+      for (final part in attachmentParts)
+        MailAttachment(
+          fileName: part.fileName ?? 'attachment',
+          mimeType: part.mediaType,
+          size: part.bodyBytes.length,
+          contentId: part.contentId,
+          loadBytes: () async => part.bodyBytes,
+        ),
+    ];
+
     return MailMessage(
-      subject: message.decodeSubject(),
-      from: fromList != null && fromList.isNotEmpty ? _toAddress(fromList.first) : null,
-      to: _toAddresses(message.to),
-      cc: _toAddresses(message.cc),
-      bcc: _toAddresses(message.bcc),
-      date: message.decodeDate(),
+      subject: subject,
+      from: fromList.isNotEmpty ? fromList.first : null,
+      to: toList,
+      cc: ccList,
+      bcc: bccList,
+      date: date,
       htmlBody: htmlBody,
-      textBody: message.decodeTextPlainPart(),
-      attachments: [
-        for (final info in attachmentInfos) _toAttachment(message, info),
-      ],
+      textBody: textBody,
+      attachments: attachments,
     );
   }
 
-  static MailAddress _toAddress(mime.MailAddress address) =>
-      MailAddress(name: address.personalName, email: address.email);
-
-  static List<MailAddress> _toAddresses(List<mime.MailAddress>? addresses) => [
-        for (final a in addresses ?? const <mime.MailAddress>[]) _toAddress(a),
-      ];
-
-  /// Attachment-disposed parts plus non-text inline parts (e.g. images
-  /// embedded in an HTML body via `cid:` references, such as a signature
-  /// logo) — mail clients typically list both as "attachments" even though
-  /// the inline ones also render inside the body itself.
-  static List<mime.ContentInfo> _collectAttachmentInfos(mime.MimeMessage message) {
-    final seen = <String>{};
-    final result = <mime.ContentInfo>[];
-    for (final info in [
-      ...message.findContentInfo(),
-      ...message
-          .findContentInfo(disposition: mime.ContentDisposition.inline)
-          .where((i) => !i.isText),
-    ]) {
-      if (seen.add(info.fetchId)) result.add(info);
+  static void _collectLeafParts(MimePart current, List<MimePart> leaves) {
+    if (current.isMultipart) {
+      for (final sub in current.subParts) {
+        _collectLeafParts(sub, leaves);
+      }
+    } else {
+      leaves.add(current);
     }
-    return result;
   }
 
-  /// Rewrites `<img src="cid:...">` references to inline `data:` URIs using
-  /// the matching embedded part, so images referenced from within the HTML
-  /// body actually render instead of failing to load (there's no host to
-  /// fetch a bare `cid:` URL from).
-  static String _resolveCidImages(
-    mime.MimeMessage message,
-    String html,
-    List<mime.ContentInfo> infos,
-  ) {
-    final byCid = <String, mime.ContentInfo>{};
-    for (final info in infos) {
-      final cid = info.cid?.replaceAll('<', '').replaceAll('>', '').toLowerCase();
-      if (cid != null && cid.isNotEmpty) byCid[cid] = info;
+  static List<MimePart> _collectAttachments(List<MimePart> leaves) {
+    final attachments = <MimePart>[];
+    final seen = <MimePart>{};
+
+    for (final part in leaves) {
+      final isAtt = part.isAttachment;
+      final isInlineMedia = part.isInline && !part.isText;
+      final hasCid = part.contentId != null && part.contentId!.isNotEmpty && !part.isText;
+
+      if ((isAtt || isInlineMedia || hasCid) && seen.add(part)) {
+        attachments.add(part);
+      }
+    }
+    return attachments;
+  }
+
+  static String _resolveCidImages(String html, List<MimePart> attachments) {
+    final byCid = <String, MimePart>{};
+    for (final part in attachments) {
+      final cid = part.contentId?.toLowerCase();
+      if (cid != null && cid.isNotEmpty) {
+        byCid[cid] = part;
+      }
     }
     if (byCid.isEmpty) return html;
 
     return html.replaceAllMapped(
-      RegExp('src=(["\'])cid:([^"\']+)\\1', caseSensitive: false),
+      RegExp(r'''src=(["'])cid:([^"']+)\1''', caseSensitive: false),
       (match) {
         final quote = match.group(1)!;
         final cid = match.group(2)!.replaceAll('<', '').replaceAll('>', '').toLowerCase();
-        final info = byCid[cid];
-        if (info == null) return match.group(0)!;
+        final part = byCid[cid];
+        if (part == null) return match.group(0)!;
 
-        final bytes = message.getPart(info.fetchId)?.decodeContentBinary();
-        if (bytes == null) return match.group(0)!;
-
-        final mimeType = info.mediaType?.text ?? 'application/octet-stream';
-        return 'src=$quote' 'data:$mimeType;base64,${base64Encode(bytes)}' '$quote';
-      },
-    );
-  }
-
-  static MailAttachment _toAttachment(mime.MimeMessage message, mime.ContentInfo info) {
-    return MailAttachment(
-      fileName: info.fileName ?? 'attachment',
-      mimeType: info.mediaType?.text ?? 'application/octet-stream',
-      size: info.size,
-      contentId: info.cid?.replaceAll('<', '').replaceAll('>', ''),
-      loadBytes: () async {
-        final bytes = message.getPart(info.fetchId)?.decodeContentBinary();
-        return bytes == null ? Uint8List(0) : Uint8List.fromList(bytes);
+        final mimeType = part.mediaType.isNotEmpty ? part.mediaType : 'application/octet-stream';
+        return 'src=$quote' 'data:$mimeType;base64,${base64Encode(part.bodyBytes)}' '$quote';
       },
     );
   }

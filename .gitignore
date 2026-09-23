@@ -8,3 +8,12 @@ pubspec.lock
 example/pubspec.lock
 example/.dart_tool/
 example/build/
+
+# Stray Flutter/Xcode tooling output that ends up at the plugin root when
+# a flutter/xcode command is run from the repo root instead of example/.
+android/local.properties
+android/app/
+ios/Flutter/
+ios/Runner/
+ios/Pods/
+ios/.symlinks/

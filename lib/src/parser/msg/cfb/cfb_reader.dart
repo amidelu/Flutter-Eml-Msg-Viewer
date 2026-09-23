@@ -34,12 +34,10 @@ const int _endOfChain = 0xFFFFFFFE;
 class CompoundFile {
   CompoundFile._({
     required this.entries,
-    required int miniStreamCutoff,
-    required Uint8List Function(int startSector, int size) readChain,
-    required Uint8List Function(int startMiniSector, int size) readMiniChain,
-  })  : _miniStreamCutoff = miniStreamCutoff,
-        _readChain = readChain,
-        _readMiniChain = readMiniChain;
+    required this._miniStreamCutoff,
+    required this._readChain,
+    required this._readMiniChain,
+  });
 
   final List<CfbEntry> entries;
   final int _miniStreamCutoff;

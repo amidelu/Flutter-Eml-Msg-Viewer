@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import '../model/mail_message.dart';
@@ -16,6 +15,6 @@ class MailMessageParser {
     if (looksLikeCompoundFile(bytes)) {
       return MsgParser.parse(bytes);
     }
-    return EmlParser.parse(utf8.decode(bytes, allowMalformed: true));
+    return EmlParser.parseBytes(bytes);
   }
 }
